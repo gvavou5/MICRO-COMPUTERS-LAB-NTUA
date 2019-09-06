@@ -1,0 +1,15 @@
+START:  
+	   CALL BEEP		
+	   MVI B,03H	;bazw ston BC to 1000 decimal
+	   MVI C,E8H
+
+LABEL1: MVI A,FFH	
+	   MVI E,10H	;E=16
+
+LOOP1:  STA 3000H	
+	   CALL DELB
+	   DCR A
+        DCR E
+        JNZ LOOP1
+        JMP LABEL1
+END

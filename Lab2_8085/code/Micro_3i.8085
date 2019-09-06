@@ -1,0 +1,62 @@
+START: 
+	MVI E,00H
+	LDA 2000H
+	MOV B,A	;(B)<-DIP_SWITCHES
+	ANI 01H	;krataw to B0
+	MOV C,A	;(C)<-B0
+	MOV A,B	
+	RRC		;fernw to A0 sto deksiotero bit
+	ANI 01H	;kai krataw to A0
+	ANA C	;(BO)AND(A0)
+	MOV E,A	;(E)<-(BO)AND(A0)
+	
+LABEL_X1_X0:
+	MOV A,B	;epanafora twn diakoptwn ston A
+	ANI 04H	;krataw to B1 
+	MOV C,A	;(C)<-B1
+	MOV A,B	
+	RRC		;fernw to A1 sto 3o bit apo aristera
+	ANI 04H	
+	ANA C	;(A)<-(B1)AND(A1)
+	MOV C,A 	;krataw to (B1)AND(A1)giati to 8elw kai gia epomenh praksh
+	RRC		;paw to apotelesma sto 2o bit apo aristera
+	MOV D,A	;swzw to apotelesma ston D gia na kanw thn praksh toy X0
+	RRC		;to paw sto 1o bit gia na kanw thn praksh toy X0
+	XRA E 	;(B1 AND A1) XOR (BO AND AO)= X0
+	ADD D	;D=X1 ARA A=X1XO
+	MOV E,A 	;(E)<-X1X0
+
+LABEL_X2:
+	MOV A,B	;epanafora twn diakoptwn ston A
+	ANI 10H	;krataw to B2 
+	MOV C,A	;(C)<-B2
+	MOV A,B	 
+	RRC		;fernw to A2 sto 5o apo deksia bit
+	ANI 10H	;krataw to A2
+	ORA C	;(A)<-(B2)OR(A2)
+	ANI 10H	;krataw mono to apotelesma thn NOR sto 5o bit
+	RRC		;kai to metaferw sto 3o bit 
+	RRC		
+	ADD E	;(A)<-X2X1X0
+	MOV E,A	;(E)<-X2X1X0
+
+LABEL_X3:	
+	MOV A,B	;epanafora twn diakoptwn ston A
+	ANI 40H	;krataw to B3 
+	MOV C,A	;(C)<-B3
+	MOV A,B	
+	RRC		;paw sto A3 sto 7o bit
+	ANI 40H	;kai krataw mono to A3
+	ORA C	;kanw thn praksh (B3)OR(A3)
+	ANI 40H	;krataw mono to apotelesma ths OR
+	RRC		;metafora sto 4o bit
+	RRC
+	RRC
+	ADD E	;bazw to teliko apotelesma ston A
+
+LABEL_END:
+	CMA
+	STA 3000H
+	JMP START
+
+	END

@@ -1,0 +1,88 @@
+	MVI A,0DH			;energopoihsh diakopwn
+	SIM
+	EI
+	MVI D,FFH			;Arxikopoiisi eksodou
+	MOV A,D
+	STA 3000H
+	LXI B,0064H
+	DI
+	CALL DELB
+	EI
+
+COUNT:
+	MOV A,D
+	ANI 0FH			;4 LSB=metritis
+	DCR A			;meiwse ena (logw tis sumplirwsis)
+	MOV E,A
+	MOV A,D		
+	ANI F0H			;Pare ta 4MSB pou antistoixoun ston metriti 
+					;diakopwn
+	ADD E			;Sunenwse me ta 4LSB
+	STA 3000H		;Emfanise sta LED
+	MOV D,A			;Apothikeuesai tin teleutaia eksodo ston D
+	DI				;Apenergopoiise tis diakopes prin tin kathusterisi
+	LXI B,0064H	;Kathusterisi isi me to 1/10 tou sec
+	CALL DELB
+	EI
+
+CHECK_SWITCHES1:
+	MVI A,00H		
+	CMP E			;ean o metritis den exei ftasei sto 15
+	JNZ COUNT		;epanelave tin diadikasia
+	MOV A,D
+	ANI F0H		 
+	ADI 0FH			;alliws ksekina ton apo tin arxi
+	STA 3000H
+	DI
+	CALL DELB
+	EI
+	MOV D,A
+	JMP COUNT		;sunexomenh leitourgia
+
+INTR_ROUTINE:		;routina eksupiretisis diakopis
+	LXI B,0032H		
+	CALL DELB		;kathsterisi 50msec
+R_MASK:
+	RIM				;elekse to 5o bit tis maskas
+	ANI 20H			;kai sunexise parakataw otan ginei 0
+	CPI 00H
+	JNZ R_MASK
+	LXI B,0032H
+	CALL DELB			;kathusterisi 50msec
+	LDA 2000H
+	RAL 
+	JNC LABEL11
+	MOV A,D
+	ANI F0H		
+	RRC				;metefere ta 4 MSB sta LSB
+	RRC
+	RRC
+	RRC
+	CPI 00H			;an eisai se pollaplasio tou 16 ksekina
+	JZ RESTART		;tin metrisi apo tin arxi
+	DCR A			;alliws auksise to plithos twn diakopwn 
+					;kata 1 (afairw logw apeutheias sumplirwsis 
+					;eksodou)
+	RLC				;ksanametefere ta sta 4MSB
+	RLC
+	RLC
+	RLC
+	MOV E,A
+	MOV A,D
+	ANI 0FH			;kai topothetise ta 4LSB toy metriti
+	ADD E	
+	JMP EXIT			;emfanise to apotelesma
+
+RESTART:
+	MOV E,A
+	MOV A,D
+	ANI 0FH
+	ADI F0H
+
+EXIT:
+	STA 3000H
+	MOV D,A			;krata tin teleutaia egkuri eksodo ston D	
+LABEL11:	EI
+		RET
+
+END

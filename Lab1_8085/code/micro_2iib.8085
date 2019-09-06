@@ -1,0 +1,71 @@
+	MVI D,FFH
+CHECK_SWITCHES:
+	LDA 2000H
+	RAL
+	JC INTER
+	MVI L,00H
+	DI
+	JMP COUNT
+INTER:
+	MVI L,01H
+	MVI A,0DH
+	SIM
+	EI
+
+COUNT:
+	MOV A,D
+	ANI 0FH
+	DCR A
+	MOV E,A
+	MOV A,D
+	ANI F0H
+	ADD E
+	STA 3000H	
+	MOV D,A
+	LXI B,0AFFH
+	DI
+	CALL DELB
+	MVI A,00H
+	CMP L
+	JZ CHECK_SWITCHES1
+	EI
+CHECK_SWITCHES1:
+	MVI A,00H
+	CMP E
+	JNZ CHECK_SWITCHES
+	MOV A,D
+	ANI F0H
+	ADI 0FH
+	MOV D,A
+	JMP CHECK_SWITCHES
+
+INTR_ROUTINE:
+	LDA 2000H			;Diavase tin eisodo
+	MVI B,09H			;Arxikopoiisi metriti epanalipsis
+	MVI L,00H			;Arxikopoiisi metriti twn ON diakoptwn
+REPEAT:
+	RAL				;des to MSB
+	JNC SKIP			;an den einai 1 min ayksiseis to metriti
+	INR L
+SKIP:
+	DCR B
+	JNZ REPEAT		;epanelave mexri na elegkseis ola ta psifia 
+					;eisodou
+	MOV A,L
+	RLC				;metefere to metriti sta MSB
+	RLC
+	RLC
+	RLC
+	ANI F0H
+	CMA				;kai anestrepse gia energopoiisi twn 
+					;katallilwn LEDS
+	MOV E,A
+	MOV A,D
+	ANI 0FH
+	ADD E			;sunenwse me ton metriti tou programmatos
+	STA 3000H			;emfanise sta LEDs
+	MOV D,A			;apothikeuse ston D tin teleutaia 
+					;emfanizomeni katastasi
+	RET
+
+END

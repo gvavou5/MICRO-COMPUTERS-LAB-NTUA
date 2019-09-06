@@ -1,0 +1,76 @@
+BEGIN:
+	LDA 2000H			;diavasma eisodou
+	MVI B,00H 		;ekatontades
+	MVI C,00H 		;dekades
+	MOV H,A
+	MVI E,00H
+	RAL
+	JNC GREATER_THAN_100
+	MVI E,01H
+	MOV A,H
+	CMA
+	ADI 01H
+	JMP LABEL--
+
+GREATER_THAN_100:
+	MOV A,H
+LABEL--:
+	CPI 64H 			;sugkrinw me to 100
+	JNC BIGGER_100		;phgaine sthn etiketa BIGGER_100 an o ari8mos einai megalyteros toy 100
+
+GREATER_THAN_10:	
+	;an exw er8ei edw sigoura o ari8mos einai <100
+	CPI 0AH 			;sugkrinw me to 10
+	JNC BIGGER_10		;phgaine sthn etiketa BIGGER_10 an o ari8mos einai megaluteros tou 10
+
+LABEL_SEGM:	
+	MOV L,A
+	MVI A,10H 		;ka8arizw ta pshfia pou den 8elw na emfanisw
+	STA 0BF4H
+	STA 0BF5H
+
+	LXI D,0BF0H 
+	MOV A,L			;apo8hkeuw tis monades
+	STAX D
+	INX D
+	
+	MOV A,C
+	STAX D			;apo8hkeuw tis dekades
+	INX D
+	
+	MOV A,B
+	STAX D			;apo8hkeuw tis ekatontades
+	INX D
+	
+	MOV A,H
+	ANI 80H
+	CPI 80H
+	JNZ LABEL+
+	MVI A,1CH
+	STAX D
+	JMP CALL_ROUTINES
+
+LABEL+:
+	MVI A,00H	
+	STAX D
+	INX D
+	
+	
+CALL_ROUTINES:
+	LXI D,0BF0H
+	CALL STDM			;plhrhs emfanish
+	CALL DCD
+	JMP BEGIN
+	
+
+BIGGER_100:
+	SUI 64H			;afairw 100 apo ton ari8mo
+	INR B			;ekatontades+=1
+	JMP LABEL--
+
+BIGGER_10:
+	SUI 0AH			;afairw 10 apo ton ari8mo
+	INR C			;dekades+=1
+	JMP GREATER_THAN_10
+
+END

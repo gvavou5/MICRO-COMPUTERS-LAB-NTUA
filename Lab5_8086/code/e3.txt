@@ -1,0 +1,116 @@
+#include <avr/io.h>
+
+void changeState (unsigned char input, unsigned char msbBit, unsigned char * state);
+
+int main(void) {
+	// I thira Port D tithetai ws eisodos
+	DDRD = 0x00;
+	// I thura Port B tithetai ws eksodos kai arxika anavei to LED 7
+	DDRB = 0xFF;
+	PORTB = 0x80;
+	int flag[5];
+	int i;
+	for (i=0;i<5;i++){
+			flag[i]=0;
+	}
+
+
+	// Arxikopoiisi katastasis LED
+	unsigned char ledState = 0x80;
+	while (1) {
+		unsigned char input;
+		input = PIND;		// Diavase to input apo ti thira D
+		// Analoga me to poios diakoptis exei patithei tropopoiise tin katastasi
+		if ((input & 0x10) == 0x10) {
+			//changeState(input, input & 0x10, &ledState);
+			flag[0]=1;
+		}
+		if ((input & 0x08) == 0x08) {
+			//changeState(input, input & 0x08, &ledState);
+			flag[1]=1;
+		}
+		if ((input & 0x04) == 0x04) {
+			//changeState(input, input & 0x04, &ledState);
+			flag[2]=1;
+		}
+		if ((input & 0x02) == 0x02) {
+			//changeState(input, input & 0x02, &ledState);
+			flag[3]=1;
+		}
+		if ((input & 0x01) == 0x01) {
+			//changeState(input, input & 0x01, &ledState);
+			flag[4]=1;
+		}
+		
+		input=PIND;
+
+		if (flag[0]==1 && ((input & 0x10) == 0x00)) {
+			changeState(input, 0x10, &ledState);
+			flag[0]=0;
+		}
+		else if (flag[1]==1 && ((input & 0x08) == 0x00)) {
+			changeState(input, 0x08, &ledState);
+			flag[1]=0;
+		}
+		else if (flag[2]==1 &&((input & 0x04) == 0x00)) {
+			changeState(input, 0x04, &ledState);
+			flag[2]=0;
+		}
+		else if (flag[3]==1 && ((input & 0x02) == 0x00)) {
+			changeState(input, 0x02, &ledState);
+			flag[3]=0;
+		}
+		else if (flag[4]==1 && ((input & 0x01) == 0x00)) {
+			changeState(input,0x01, &ledState);
+			flag[4]=0;
+		}
+		PORTB = ledState;
+	}
+	return 0;
+}
+
+
+void changeState (unsigned char input, unsigned char msbBit, unsigned char * state) {
+	
+	
+	
+	while ((PIND & msbBit) == msbBit); // Perimene mexri na afethei o piestikos diakoptis
+		switch (msbBit) {
+			case 0x10: // SW4
+				(* state) = 0x80;
+				break;
+			
+			case 0x08: // SW3
+				if ((* state) == 0x40) // Oriaki periptwsi
+					(* state) = 0x01;
+				else if((*state)==0x80) //oriakh periptwsh 2
+					(*state) = 0x02;
+				else	// alliws olisthisi
+					(* state) <<= 2;
+				break;
+				
+			case 0x04: // SW2
+				if ((* state) == 0x02) // Oriaki periptwsi
+					(* state) = 0x80;
+				else if ((*state) == 0x01) //oriakh periptwsh 2
+					(*state) = 0x40; 
+				else	// alliws olisthisi
+					(* state) >>= 2;
+				break;
+			
+			case 0x02: // SW1
+				if ((* state) == 0x80) // Oriaki periptwsi
+					(* state) = 0x01;
+				else	// alliws olisthisi
+					(* state) <<= 1;
+				break;				
+
+			case 0x01: // SW0
+				if ((* state) == 0x01) // Oriaki periptwsi
+					(* state) = 0x80;
+				else	// alliws olisthisi
+					(* state) >>= 1;
+				break;
+		}
+	return;
+}

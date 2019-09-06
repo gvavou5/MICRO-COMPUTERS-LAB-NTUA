@@ -1,0 +1,34 @@
+EXIT 	MACRO				;macro exits back to DOS
+	MOV AX,4C00H
+	INT 21H
+ENDM
+
+PRINT	MACRO	CHAR			;macro to print a char
+	PUSH DX
+	PUSH AX
+	MOV DL,CHAR			;o CHAR einai ston DX
+	MOV AH,2
+	INT 21H
+	POP AX
+	POP DX
+ENDM
+
+READ	MACRO				;macro to read a char from keyboard
+	MOV AH,8
+	INT 21H				;o,ti diavasa paei sto AL
+ENDM
+
+PRINT_STRING MACRO STRING		;macro that prints a whole string
+	PUSH DX
+	PUSH AX
+	LEA DX,STRING			;to STRING einai ston DX
+	MOV AH,09H
+	INT 21H
+	POP AX
+	POP DX
+ENDM
+
+ERROR MACRO:				
+	PRINT_STRING NEWLINE
+	PRINT_STRING MSG2
+ENDM

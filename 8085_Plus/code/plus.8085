@@ -1,0 +1,128 @@
+
+	MVI H,00H		;Arxikopoiisi orofwn (isogeio)
+	MVI L,FEH		;Arxikopoihsh Endeiksis LED wste na deixnei 
+				;isogeio
+	LXI D,0BF0H		;Arxikopoiisi endeiktwn gia ti leksi FLoor
+				;Tha apothikeusw tis times gia apeikonish stis 6 
+				;dieuthynseis 
+				; apo 0bf0 kai panw.
+
+	MVI A,00H		;Arxika endeiksi gia isogeio sto 1o 7-segment
+	STAX D
+	INX D			;Metavash sth dieuthynsh 0bf1
+	MVI A,1BH		;r
+	STAX D
+	INX D
+	MVI A,15H		;oo
+	STAX D
+	INX D
+	STAX D
+	INX D
+	MVI A,12H		;L
+	STAX D
+	INX D
+	MVI A,0FH		;F
+	STAX D
+	MOV A,L
+	STA 3000H		; Mono to Led 0 anammeno (isogeio)
+
+DISPLAY:	
+		              ; Apeikonish 7-segment
+	LXI D,0BF0H
+	PUSH H			; O H-L exei thn timh toy orofoy poy 8eloyme na apeikonisoume
+	CALL STDM
+	CALL DCD		; Apeikonish FloorX opou X o katallhlos orofos
+	POP H
+
+START:				
+	LDA 2000H		; Diavasma switches
+	ANI 81H		; Krataw to LSB kai to MSB mono
+	CPI 00H		; An MSB=LSB=0 tote kanonikh leitoyrgia
+	JZ CALL_FROM_LEVEL
+	CPI 80H		; Alliws, an MSB=1 tote kateillhmeno kai h porta kleisth 
+	JZ FROM_INSIDE
+	JNZ DISPLAY		; Alliws  an LSB=1 perimene mexri na kleisei h porta
+	
+CALL_FROM_LEVEL:
+	CALL KIND
+	MOV E,A              ; kratw thn timh pou path8hke apo to plhktrologio ston E
+	LDA 2000H		; Diavasma switches
+	ANI 81H		; Krataw to LSB kai to MSB mono
+	CPI 01H		; 
+	JZ DISPLAY		; An LSB=1 tote perimene 
+	CPI 80H
+	JZ AUX  	      ; an MSB=1 briskomai mesa sto ansaser kai phgainw sthn AUX 
+				;gia na eleg3w an path8hke plhktro megalytero toy 8 
+F2:	MOV A,E
+	CPI 08H		;prepei na path8ei 0-7 gia na arxisei to asanser
+	JNC DISPLAY		; an den path8ei 0-7 perimenw
+	
+MOVE_ELEV:			; Fysiologikh Leitourgia (A epithymhtos orofos, H
+				;trexwn orofos)			
+	LXI D,0BF0H		; 
+	STAX D			; Apothikevw ton epithymhto orofo gia epideiksh 
+				;sta 7-segments
+	MOV E,A		; E = Epithymhtos orofos
+	CMP H			; An A=trexwn orofos tote perimenw
+	JZ DISPLAY
+	JNC UP			; Alliws an A>H to asanser tha anevei -> UP
+	SUB H			; A-H < 0 
+	CMA			; Opote vriskw th swsth timh>0 gia to posous 
+				;orofous
+	INR A			; tha anevw (symplhrwma ws pros 2)
+	MOV D,A		; D o metrhths gia to posous orofous prepei na 
+				;katevw
+	MOV A,L		; A <- L (Trexwn orofos (antestramenos))
+	MOV H,E		; H <- Neos Orofos pou tha exw ftasei
+
+DOWN:				; Arxizw na katevainw orofous mexri na paw ston 
+				;epithymhto 
+	RRC			
+	MOV L,A		; Swzw ton trexwn orofo (anestrameno)
+	LXI B,03E8H		; B,C pairnei timh gia kathysterisi
+	CALL DELB		; Kathysterisi 1 sec
+	STA 3000H		; Apeikonish orofou
+	DCR D			; Meiwsh metrhth
+	JZ DISPLAY		; An mhdenistei o metrhths shmainei oti exw ftasei 
+				;ston epithymhto orofo
+	JMP DOWN		; Alliws katevainw k allo orofo
+	
+UP:				; Arxikopoihseis kataxwrhtwn
+	SUB H			
+	MOV D,A		; D o metrhths gia anebasma
+	MOV A,L		; Trexwn orofos (anestramenos)
+	MOV H,E		; H <- Neos orofos pou tha exw ftasei
+
+GO_UP:				; Anevainw mexri na paw ston epithymhto
+	RLC			; Anevainw 1 orofo
+	MOV L,A		; Swzw ton trexwn orofo (anestrameno)
+	LXI B,03E8H		; B,C pairnei timh gia kathysterisi
+	CALL DELB		; Kathysterisi 1 sec
+	STA 3000H		; Apeikonish orofou
+	DCR D			; Meiwsh metrhth
+	JZ DISPLAY		; An mhdenistei o metrhths shmainei oti exw ftasei 
+	JMP GO_UP		; Alliws anevainw k allo orofo
+	
+FROM_INSIDE:			; Eksyphrethsh kateilhmenou asanser
+	CALL KIND		; Diavazw ton epithymhto orofo
+	MOV E,A
+	LDA 2000H		; Diavasma switches
+	ANI 81H		; Krataw to LSB kai to MSB mono
+	CPI 01H		 
+	JZ DISPLAY		; AN LSB=1 tote perimene giati einai anoixth h porta
+	CPI 80H		
+	JZ AUX			; An to MSB parameinei 1 synexise
+	JMP F2			; Alliws (an to MSB exei ginei 0) -> Leitourgia 				;klhshs
+
+AUX:   MOV A,E		; Xreiazetai mono an allaksei to switch oso 
+				; perimenei h KIND
+
+F1:
+	CPI 08H		; An path8ei plhktro <=7 einai lathos opote 
+				; ksanaelegxw apo thn arxh
+	JC START		  	
+	SUI 08H		; Ypologizw ton epithymhto orofo
+	JMP MOVE_ELEV		; kai phgainw se auton...
+
+	END	
+

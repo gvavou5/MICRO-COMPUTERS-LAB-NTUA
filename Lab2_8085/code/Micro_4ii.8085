@@ -1,0 +1,29 @@
+BEGIN:
+
+	CALL KIND		;apo8hkeush ston A tou kwdikou tou plhktrou pou pathsa	
+	
+	MOV B,A	 	;swzw ton A gia na ka8arisw ta 7-segments pou den 8elw
+	MVI A,10H 	;(A)<-10H gia na ka8arisw ta 7-segments
+	STA 0BF0H 	
+	STA 0BF1H
+	STA 0BF2H
+	STA 0BF3H
+	MOV A,B		;epanafora periexomenoy tou A
+	
+	LXI D,0BF4H 	;fortwnw ston DE thn address sthn
+		    		;opoia 8a emfanisw 
+	
+	ANI 0FH    	;krataw to lsb tou kwdikou pou diavasa me thn KIND
+	STAX D	    	;to apo8hkeuw sthn dieu8unsh 0BF4H
+	INX D		;((D)(E))<-0BF5H
+	MOV A,B		;epanafora ston A tou kwdikou
+	ANI F0H    	;krataw to msb tou kwdikou pou diavasa me thn KIND
+	STAX D		;to apouhkeuw sth dieu8unsh 0BF5H
+	LXI D,0BF0H	;thn arxikh dieu8unsh thn exei o DE pou prepei na dei h STDM
+	CALL STDM		;h STDM metakinei to munhma to opoio ksekina apo thn dieu8unsh pou deixnei o DE 
+				;kai perimenei mexri na vrei thn routina DCD
+	CALL DCD		
+	JMP BEGIN		;sunexomenh leitourgia
+
+END
+	

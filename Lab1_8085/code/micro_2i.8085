@@ -1,0 +1,39 @@
+START:
+MVI B,00H		;bazw ston BC to 100 decimal gia thn ka8usterhsh
+MVI C,64H
+MVI A,00H		;anabw ta leds
+STA 3000H		;ta apeikonizw
+CALL DELB		;ka8usterhsh 2*100ms
+CALL DELB
+LDA 2000H		;diabasma apo diakoptes
+ANI F0H		;krataw ta MSB 
+RLC			;metafora sta LSB
+RLC
+RLC
+RLC
+MOV E,A		;bazw sto E ton ari8mo pou apeikonizoun ta MSB
+CPI 00H 		;an einai 0 tote paw sto sbhsimo
+JZ LABEL2
+
+LOOP1: CALL DELB	;trexei gia oso lene ta MSB
+	  DCR E 
+	  JNZ LOOP1
+
+LABEL2:
+MVI A,FFH		;sbhnw ta leds
+STA 3000H		;ta apeikonizw
+CALL DELB		;ka8usterhsh 2*100ms
+CALL DELB
+LDA 2000H		;diabasma apo diakoptes
+ANI 0FH		;krataw ta LSB 
+MOV E,A		;bazw sto E ton ari8mo pou apeikonizoun ta LSB
+CPI 00H		;an einai 0 tote paw sthn arxh
+JZ START
+
+LOOP2: CALL DELB	;trexei gia oso lene ta LSB
+	  DCR E 
+	  JNZ LOOP2
+
+JMP START
+
+END

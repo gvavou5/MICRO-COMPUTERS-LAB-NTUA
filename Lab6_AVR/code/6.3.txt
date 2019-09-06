@@ -1,0 +1,146 @@
+.include "m16def.inc"
+.def temp = r16
+;8MHz(sunxothta plaketas)/1024(ana 1024cc auksanetai kata 1 o timer) = 7812,5
+;ara 2x7812,5 = 15625 kai 
+;Επειδή η υπερχείλιση γίνεται όταν μετρήσει 65536 κύκλους (16 ψηφία), 
+;θα πρέπει η αρχική τιμή που θα του δοθεί πριν αρχίσει να μετράει προς τα πάνω να είναι 
+;65536-15625=49911=0xC2F7
+.equ highTimerStart = 0xC2
+.equ lowTimerStart = 0xF7
+.def flag=r22 ;me flag=1 exw ananewsh enw me flag=0 den exw
+.def flag2=r23;
+
+.org 0x0
+	jmp start
+.org 0x4
+	jmp int1_routine
+.org 0x10
+	jmp timer1_routine
+
+start:
+	/* Arxikopoiisi stivas */
+	ldi temp,high(ramend)
+	out sph,temp
+	ldi temp,low(ramend)
+	out spl,temp
+
+	/* Orismos eisodwn kai eksodwn */
+	clr temp
+	out DDRD,temp				; PortD ws eisodos
+	clr temp
+	;ldi temp,0xFE
+	out DDRA,temp				; PortA ws eisodos (to A7)
+	ser temp
+	out DDRB,temp				; PortB ws eksodos
+
+	/* Orismos k energopoiisi diakopis xronisti timer1 */
+	ldi temp,(1 << TOIE1)		; Energopoiisi diakopis uperxeilisis
+	out TIMSK,temp				; gia ton timer1
+	ldi temp,(1 << CS12)|(0 << CS11)|(1 << CS10)	; CK/1024
+	out TCCR1B,temp
+
+	/* Orismos k energopoiisi diakopis INT1 */
+	ldi temp,(1 << ISC10)|(1 << ISC11)	; Anagnwrisi diakopis INT1 se 
+	out MCUCR,temp						; thetiki akmi
+	ldi temp,(1 << INT1)				; Sima gia energopoiisi ths INT1
+	out GICR,temp
+	sei									; Energopoiisi diakopwn
+	
+	ldi flag,0
+main:
+	in temp,PINA						; Diavase tin ta bits tis PortA
+	andi temp,0x80						; kai apomonwse to bit7 (eisodos)
+	breq main
+continue:							; An einai 0 epanelave
+	in temp,PINA
+	andi temp,0x80
+	brne continue
+			
+	ldi temp,highTimerStart				; Arxikopoiise ek neou ton
+	out TCNT1H,temp						; xronisti
+	ldi temp,lowTimerStart
+	out TCNT1L,temp
+	cpi flag,1
+	breq setall2
+	jmp fix1
+	
+
+setall1:
+	ser temp
+	out PORTB,temp
+	ldi r24,low(500)					;orismos kathusterhshs gia thn metrhsh ths main
+	ldi r25,high(500)
+	rcall wait_msec
+	
+fix1:	
+	ldi flag,1
+	ldi temp,1							; Proetoimase tin eksodo
+	out PORTB,temp						; kai emfanise tin
+	rjmp main
+
+int1_routine:
+	/* Elegxos gia spinthirismo */
+repeat:	
+	ldi r24 ,(1 << INTF1)
+	out GIFR ,r24
+	ldi r24,low(5)
+	ldi r25,high(5)
+	rcall wait_msec
+	in r24,GIFR
+	sbrc r24,7 ; sbrc r24,6
+		
+		;push r24
+		;andi r24,128 ;check an to bit 7 einai akomh 1
+		;cpi r24,0
+		;pop r24
+		;brne repeat 
+
+	rjmp repeat 
+	
+	ldi temp,highTimerStart				; Arxikopoiise ek neou ton
+	out TCNT1H,temp						; xronisti
+	ldi temp,lowTimerStart
+	out TCNT1L,temp
+	cpi flag,1
+	breq setall2
+	jmp fix2
+	
+setall2:
+	ser temp
+	out PORTB,temp
+	ldi r24,low(500)					;orismos kathusterhshs gia thn metrhsh ths main
+	ldi r25,high(500)
+	rcall wait_msec
+	
+fix2:	
+	ldi flag,1
+	ldi temp,1							; Proetoimase tin eksodo
+	out PORTB,temp						; kai emfanise tin	
+	reti
+
+timer1_routine:
+	ldi flag,0
+	clr temp
+	out PORTB,temp
+	reti
+
+wait_usec:
+		sbiw r24 ,1						; 2 κύκλοι (0.250 μsec)
+		nop								; 1 κύκλος (0.125 μsec)
+		nop								; 1 κύκλος (0.125 μsec)
+		nop								; 1 κύκλος (0.125 μsec)
+		nop								; 1 κύκλος (0.125 μsec)
+		brne wait_usec					; 1 ή 2 κύκλοι (0.125 ή 0.250 μsec)
+		ret								; 4 κύκλοι (0.500 μsec)
+
+wait_msec:
+		push r24						; 2 κύκλοι (0.250 μsec)
+		push r25						; 2 κύκλοι
+		ldi r24 , low(998)				; φόρτωσε τον καταχ. r25:r24 με 998 (1 κύκλος - 0.125 μsec)
+		ldi r25 , high(998)				; 1 κύκλος (0.125 μsec)
+		rcall wait_usec					; 3 κύκλοι (0.375 μsec), προκαλεί συνολικά καθυστέρηση 998.375 μsec
+		pop r25							; 2 κύκλοι (0.250 μsec)
+		pop r24							; 2 κύκλοι
+		sbiw r24 , 1					; 2 κύκλοι
+		brne wait_msec					; 1 ή 2 κύκλοι (0.125 ή 0.250 μsec)
+		ret								; 4 κύκλοι (0.500 μsec)
